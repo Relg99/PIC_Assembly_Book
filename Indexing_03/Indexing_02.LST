@@ -1,0 +1,434 @@
+MPASM 5.86  /HOME/RICHO/DOCUMENTS/PIC_ASSEMB   8-22-2023  10:05:31         PAGE  1
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00001 ;---------------------------------------------------------;
+                      00002 ;                                                         ;
+                      00003 ;Author:         Relg99                                   ;
+                      00004 ;Date:           21/08/23                                 ;
+                      00005 ;                                                         ;
+                      00006 ;                                                         ;
+                      00007 ;Program:       Indexing_02                               ;
+                      00008 ;                                                         ;
+                      00009 ;Description:                                             ;
+                      00010 ;                                                         ;
+                      00011 ;Control level of water inside a tank.                    ;
+                      00012 ;Sensors:       Sensor_1(A0), sensor_2(A1), sensor_3(A2). ;
+                      00013 ;Water pumps:   WP1(B5), WP2(B6).                         ;
+                      00014 ;Indicators:    Empty(B0), filling up(B1), full(B2),      ;
+                      00015 ;               overflow(B3), Alarm(B4).                  ;
+                      00016 ;                                                         ;
+                      00017 ;                                                         ;
+                      00018 ;                     _______________________________     ;
+                      00019 ;                    / _____________________________ \    ;
+                      00020 ;                   / /      ______________         \ \   ;
+                      00021 ;                   | |     / ____________ \        | |   ;
+                      00022 ;                   | |    / /            \ \       | |   ;
+                      00023 ;                   | |    | |            | |       | |   ;
+                      00024 ;                                        _|_|_     _|_|_  ;
+                      00025 ;       |---------sensor_3------|       /     \   /     \ ;
+                      00026 ;       |                       |       | WP1 |   | WP2 | ;
+                      00027 ;       |---------sensor_2------|       \_____/   \_____/ ;
+                      00028 ;       |                       |                         ;
+                      00029 ;       |                       |                         ;
+                      00030 ;       |                       |                         ;
+                      00031 ;       |---------sensor_1------|                         ;
+                      00032 ;       |_______________________|                         ;
+                      00033 ;                                                         ;
+                      00034 ;                                                         ;
+                      00035 ;1. If the tank is empty both water pumps will activate.  ;
+                      00036 ;   The "Empty" indicator will turn on.                   ;
+                      00037 ;2. When the water gets to the empty level and touches    ;
+                      00038 ;   the empty sensor the "Filling up" indicator will turn ;
+                      00039 ;   on, turning off the "Empty" indicator.                ;
+                      00040 ;3. If the water gets to the full sensor the WP2 will turn;
+                      00041 ;   off. The "Full" indicator will turn on.               ;
+                      00042 ;4. Finally, if the water gets to the overflow sensor     ;
+                      00043 ;   both WP1 and WP2 will shut down and the "Overflow"    ;
+                      00044 ;   indicator will shine.                                 ;
+                      00045 ;                                                         ;
+                      00046 ;---------------------------------------------------------;
+                      00047 
+                      00048 
+                      00049 
+                      00050 
+                      00051 #include "p16f628a.inc"
+                      00001         LIST
+                      00002 
+MPASM 5.86  /HOME/RICHO/DOCUMENTS/PIC_ASSEMB   8-22-2023  10:05:31         PAGE  2
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00003 ;==========================================================================
+                      00004 ; Build date : Oct 24 2019
+                      00005 ;  MPASM PIC16F628A processor include
+                      00006 ; 
+                      00007 ;  (c) Copyright 1999-2019 Microchip Technology, All rights reserved
+                      00008 ;==========================================================================
+                      00009 
+                      00386         LIST
+                      00052 
+2007   3F38           00053         __CONFIG _CP_OFF & _CPD_OFF & _LVP_OFF & _BOREN_OFF & _MCLRE_ON & _PWRTE_OFF & _WDTE_OFF & _FOSC
+                            _INTOSCIO
+                      00054 
+                      00055 
+                      00056         LIST P=16F628A
+                      00057 
+0000                  00058         ORG     0x00
+                      00059         
+0000   0185           00060         CLRF    PORTA
+0001   0186           00061         CLRF    PORTB
+                      00062 
+0002   3007           00063         MOVLW   0x07
+0003   009F           00064         MOVWF   CMCON
+                      00065 
+0004   1683           00066         BSF     STATUS,RP0
+0005   1303           00067         BCF     STATUS,RP1
+                      00068 
+0006   301F           00069         MOVLW   0x1F
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0007   0085           00070         MOVWF   TRISA
+                      00071 
+0008   3000           00072         MOVLW   0x00
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0009   0086           00073         MOVWF   TRISB
+                      00074 
+000A   1283           00075         BCF     STATUS,RP0
+000B   1303           00076         BCF     STATUS,RP1
+                      00077 
+000C                  00078 main:
+                      00079 
+000C   0805           00080         MOVF    PORTA,W
+000D   3907           00081         ANDLW   b'00000111'     ; We are only interested in
+000E   0782           00082         ADDWF   PCL,F           ; 3 bits of the input.
+                      00083 
+                      00084 
+                      00085         ; It's basically        ; O F E
+                      00086         ; a truth table.        ; -----
+000F   2817           00087         GOTO    empty           ; 0 0 0 
+0010   281A           00088         GOTO    sensor_1        ; 0 0 1
+0011   2823           00089         GOTO    alarm           ; 0 1 0
+0012   281D           00090         GOTO    sensor_2        ; 0 1 1
+0013   2823           00091         GOTO    alarm           ; 1 0 0
+0014   2823           00092         GOTO    alarm           ; 1 0 1
+0015   2823           00093         GOTO    alarm           ; 1 1 0
+MPASM 5.86  /HOME/RICHO/DOCUMENTS/PIC_ASSEMB   8-22-2023  10:05:31         PAGE  3
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0016   2820           00094         GOTO    sensor_3        ; 1 1 1
+                      00095 
+0017                  00096 empty:
+                      00097 
+                      00098                                 ; Wp2 Wp1 A O Full Fi-up E
+                      00099         
+0017   3061           00100         MOVLW   0x61            ;  1   1  0 0   0    0   1
+0018   0086           00101         MOVWF   PORTB
+0019   280C           00102         GOTO    main
+                      00103 
+001A                  00104 sensor_1:
+                      00105 
+                      00106 
+001A   3062           00107         MOVLW   0x62            ;  1   1  0 0   0    1   0
+001B   0086           00108         MOVWF   PORTB
+001C   280C           00109         GOTO    main
+                      00110 
+001D                  00111 sensor_2:
+                      00112 
+                      00113 
+001D   3024           00114         MOVLW   0x24            ;  0   1  0 0   1    0   0
+001E   0086           00115         MOVWF   PORTB
+001F   280C           00116         GOTO    main
+                      00117 
+0020                  00118 sensor_3:
+                      00119 
+                      00120 
+0020   3008           00121         MOVLW   0x08            ;  0   0  0 1   0    0   0
+0021   0086           00122         MOVWF   PORTB
+0022   280C           00123         GOTO    main
+                      00124 
+0023                  00125 alarm:
+                      00126 
+                      00127 
+0023   3010           00128         MOVLW   0x10            ;  0   0  1 0   0    0   0
+0024   0086           00129         MOVWF   PORTB
+0025   280C           00130         GOTO    main
+                      00131 
+                      00132         END
+MPASM 5.86  /HOME/RICHO/DOCUMENTS/PIC_ASSEMB   8-22-2023  10:05:31         PAGE  4
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+ADDEN                             00000003
+ADEN                              00000003
+BRGH                              00000002
+C                                 00000000
+C1INV                             00000004
+C1OUT                             00000006
+C2INV                             00000005
+C2OUT                             00000007
+CCP1CON                           00000017
+CCP1IE                            00000002
+CCP1IF                            00000002
+CCP1M0                            00000000
+CCP1M1                            00000001
+CCP1M2                            00000002
+CCP1M3                            00000003
+CCP1X                             00000005
+CCP1Y                             00000004
+CCPR1                             00000015
+CCPR1H                            00000016
+CCPR1L                            00000015
+CIS                               00000003
+CM0                               00000000
+CM1                               00000001
+CM2                               00000002
+CMCON                             0000001F
+CMIE                              00000006
+CMIF                              00000006
+CREN                              00000004
+CSRC                              00000007
+DATA_CP_OFF                       00003FFF
+DATA_CP_ON                        00003EFF
+DC                                00000001
+EEADR                             0000009B
+EECON1                            0000009C
+EECON2                            0000009D
+EEDATA                            0000009A
+EEIE                              00000007
+EEIF                              00000007
+F                                 00000001
+FERR                              00000002
+FSR                               00000004
+GIE                               00000007
+INDF                              00000000
+INTCON                            0000000B
+INTE                              00000004
+INTEDG                            00000006
+INTF                              00000001
+IRP                               00000007
+NOT_BO                            00000000
+NOT_BOD                           00000000
+NOT_BOR                           00000000
+NOT_PD                            00000003
+NOT_POR                           00000001
+MPASM 5.86  /HOME/RICHO/DOCUMENTS/PIC_ASSEMB   8-22-2023  10:05:31         PAGE  5
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+NOT_RBPU                          00000007
+NOT_T1SYNC                        00000002
+NOT_TO                            00000004
+OERR                              00000001
+OPTION_REG                        00000081
+OSCF                              00000003
+PCL                               00000002
+PCLATH                            0000000A
+PCON                              0000008E
+PEIE                              00000006
+PIE1                              0000008C
+PIR1                              0000000C
+PORTA                             00000005
+PORTB                             00000006
+PR2                               00000092
+PS0                               00000000
+PS1                               00000001
+PS2                               00000002
+PSA                               00000003
+RA0                               00000000
+RA1                               00000001
+RA2                               00000002
+RA3                               00000003
+RA4                               00000004
+RA5                               00000005
+RA6                               00000006
+RA7                               00000007
+RB0                               00000000
+RB1                               00000001
+RB2                               00000002
+RB3                               00000003
+RB4                               00000004
+RB5                               00000005
+RB6                               00000006
+RB7                               00000007
+RBIE                              00000003
+RBIF                              00000000
+RCIE                              00000005
+RCIF                              00000005
+RCREG                             0000001A
+RCSTA                             00000018
+RD                                00000000
+RP0                               00000005
+RP1                               00000006
+RX9                               00000006
+RX9D                              00000000
+SPBRG                             00000099
+SPEN                              00000007
+SREN                              00000005
+STATUS                            00000003
+SYNC                              00000004
+T0CS                              00000005
+T0IE                              00000005
+MPASM 5.86  /HOME/RICHO/DOCUMENTS/PIC_ASSEMB   8-22-2023  10:05:31         PAGE  6
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+T0IF                              00000002
+T0SE                              00000004
+T1CKPS0                           00000004
+T1CKPS1                           00000005
+T1CON                             00000010
+T1OSCEN                           00000003
+T2CKPS0                           00000000
+T2CKPS1                           00000001
+T2CON                             00000012
+TMR0                              00000001
+TMR0IE                            00000005
+TMR0IF                            00000002
+TMR1                              0000000E
+TMR1CS                            00000001
+TMR1H                             0000000F
+TMR1IE                            00000000
+TMR1IF                            00000000
+TMR1L                             0000000E
+TMR1ON                            00000000
+TMR2                              00000011
+TMR2IE                            00000001
+TMR2IF                            00000001
+TMR2ON                            00000002
+TOUTPS0                           00000003
+TOUTPS1                           00000004
+TOUTPS2                           00000005
+TOUTPS3                           00000006
+TRISA                             00000085
+TRISA0                            00000000
+TRISA1                            00000001
+TRISA2                            00000002
+TRISA3                            00000003
+TRISA4                            00000004
+TRISA5                            00000005
+TRISA6                            00000006
+TRISA7                            00000007
+TRISB                             00000086
+TRISB0                            00000000
+TRISB1                            00000001
+TRISB2                            00000002
+TRISB3                            00000003
+TRISB4                            00000004
+TRISB5                            00000005
+TRISB6                            00000006
+TRISB7                            00000007
+TRMT                              00000001
+TX9                               00000006
+TX9D                              00000000
+TXEN                              00000005
+TXIE                              00000004
+TXIF                              00000004
+TXREG                             00000019
+TXSTA                             00000098
+MPASM 5.86  /HOME/RICHO/DOCUMENTS/PIC_ASSEMB   8-22-2023  10:05:31         PAGE  7
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+VR0                               00000000
+VR1                               00000001
+VR2                               00000002
+VR3                               00000003
+VRCON                             0000009F
+VREN                              00000007
+VROE                              00000006
+VRR                               00000005
+W                                 00000000
+WR                                00000001
+WREN                              00000002
+WRERR                             00000003
+Z                                 00000002
+_BODEN_OFF                        00003FBF
+_BODEN_ON                         00003FFF
+_BOREN_OFF                        00003FBF
+_BOREN_ON                         00003FFF
+_CONFIG                           00002007
+_CPD_OFF                          00003FFF
+_CPD_ON                           00003EFF
+_CP_OFF                           00003FFF
+_CP_ON                            00001FFF
+_DEVID1                           00002006
+_ER_OSC_CLKOUT                    00003FFF
+_ER_OSC_NOCLKOUT                  00003FFE
+_EXTCLK_OSC                       00003FEF
+_FOSC_ECIO                        00003FEF
+_FOSC_EXTRCCLK                    00003FFF
+_FOSC_EXTRCIO                     00003FFE
+_FOSC_HS                          00003FEE
+_FOSC_INTOSCCLK                   00003FFD
+_FOSC_INTOSCIO                    00003FFC
+_FOSC_LP                          00003FEC
+_FOSC_XT                          00003FED
+_HS_OSC                           00003FEE
+_IDLOC0                           00002000
+_IDLOC1                           00002001
+_IDLOC2                           00002002
+_IDLOC3                           00002003
+_INTOSC_OSC_CLKOUT                00003FFD
+_INTOSC_OSC_NOCLKOUT              00003FFC
+_INTRC_OSC_CLKOUT                 00003FFD
+_INTRC_OSC_NOCLKOUT               00003FFC
+_LP_OSC                           00003FEC
+_LVP_OFF                          00003F7F
+_LVP_ON                           00003FFF
+_MCLRE_OFF                        00003FDF
+_MCLRE_ON                         00003FFF
+_PWRTE_OFF                        00003FFF
+_PWRTE_ON                         00003FF7
+_RC_OSC_CLKOUT                    00003FFF
+_RC_OSC_NOCLKOUT                  00003FFE
+_WDTE_OFF                         00003FFB
+MPASM 5.86  /HOME/RICHO/DOCUMENTS/PIC_ASSEMB   8-22-2023  10:05:31         PAGE  8
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+_WDTE_ON                          00003FFF
+_WDT_OFF                          00003FFB
+_WDT_ON                           00003FFF
+_XT_OSC                           00003FED
+__16F628A                         00000001
+alarm                             00000023
+empty                             00000017
+main                              0000000C
+sensor_1                          0000001A
+sensor_2                          0000001D
+sensor_3                          00000020
+
+
+MEMORY USAGE MAP ('X' = Used,  '-' = Unused)
+
+0000 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXX---------- ----------------
+2000 : -------X-------- ---------------- ---------------- ----------------
+
+All other memory blocks unused.
+
+Program Memory Words Used:    38
+Program Memory Words Free:  2010
+
+
+Errors   :     0
+Warnings :     0 reported,     0 suppressed
+Messages :     2 reported,     0 suppressed
+
+
