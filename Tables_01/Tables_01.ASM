@@ -59,14 +59,8 @@ main:
 TruthTable:
 
 	ADDWF	PCL,F
-	RETLW	b'000000'		; The instruction RETLW
-	RETLW	b'000001'		; returns a literal after a call.
-	RETLW	b'000010'
-	RETLW	b'000100'
-	RETLW	b'001000'
-	RETLW	b'010000'
-	RETLW	b'100000'
-	RETLW	b'111111'
+	DT	0x00,0x01,0x02,0x04,0x08,0x10,0x20,0x3F
+	; Using the directive DT instead of RETLW.
 
 	END
 

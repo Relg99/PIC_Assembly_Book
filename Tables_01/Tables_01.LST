@@ -1,4 +1,4 @@
-MPASM 5.86  /HOME/RICHO/DOCUMENTS/PIC_ASSEMB   9-19-2023  18:31:52         PAGE  1
+MPASM 5.86  /HOME/RICHO/DOCUMENTS/PIC_ASSEMB   9-19-2023  18:41:22         PAGE  1
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -57,7 +57,7 @@ LOC  OBJECT CODE     LINE SOURCE TEXT
                       00040         
 0002   1683           00041         BSF     STATUS,RP0
                       00042 
-MPASM 5.86  /HOME/RICHO/DOCUMENTS/PIC_ASSEMB   9-19-2023  18:31:52         PAGE  2
+MPASM 5.86  /HOME/RICHO/DOCUMENTS/PIC_ASSEMB   9-19-2023  18:41:22         PAGE  2
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -84,17 +84,13 @@ Message[302]: Register in operand not in bank 0.  Ensure that bank bits are corr
 000D                  00059 TruthTable:
                       00060 
 000D   0782           00061         ADDWF   PCL,F
-000E   3400           00062         RETLW   b'000000'               ; The instruction RETLW
-000F   3401           00063         RETLW   b'000001'               ; returns a literal after a call.
-0010   3402           00064         RETLW   b'000010'
-0011   3404           00065         RETLW   b'000100'
-0012   3408           00066         RETLW   b'001000'
-0013   3410           00067         RETLW   b'010000'
-0014   3420           00068         RETLW   b'100000'
-0015   343F           00069         RETLW   b'111111'
-                      00070 
-                      00071         END
-MPASM 5.86  /HOME/RICHO/DOCUMENTS/PIC_ASSEMB   9-19-2023  18:31:52         PAGE  3
+000E   3400 3401 3402 00062         DT      0x00,0x01,0x02,0x04,0x08,0x10,0x20,0x3F
+       3404 3408 3410 
+       3420 343F 
+                      00063         ; Using the directive DT instead of RETLW.
+                      00064 
+                      00065         END
+MPASM 5.86  /HOME/RICHO/DOCUMENTS/PIC_ASSEMB   9-19-2023  18:41:22         PAGE  3
 
 
 SYMBOL TABLE
@@ -153,7 +149,7 @@ NOT_BOD                           00000000
 NOT_BOR                           00000000
 NOT_PD                            00000003
 NOT_POR                           00000001
-MPASM 5.86  /HOME/RICHO/DOCUMENTS/PIC_ASSEMB   9-19-2023  18:31:52         PAGE  4
+MPASM 5.86  /HOME/RICHO/DOCUMENTS/PIC_ASSEMB   9-19-2023  18:41:22         PAGE  4
 
 
 SYMBOL TABLE
@@ -212,7 +208,7 @@ STATUS                            00000003
 SYNC                              00000004
 T0CS                              00000005
 T0IE                              00000005
-MPASM 5.86  /HOME/RICHO/DOCUMENTS/PIC_ASSEMB   9-19-2023  18:31:52         PAGE  5
+MPASM 5.86  /HOME/RICHO/DOCUMENTS/PIC_ASSEMB   9-19-2023  18:41:22         PAGE  5
 
 
 SYMBOL TABLE
@@ -271,7 +267,7 @@ TXIE                              00000004
 TXIF                              00000004
 TXREG                             00000019
 TXSTA                             00000098
-MPASM 5.86  /HOME/RICHO/DOCUMENTS/PIC_ASSEMB   9-19-2023  18:31:52         PAGE  6
+MPASM 5.86  /HOME/RICHO/DOCUMENTS/PIC_ASSEMB   9-19-2023  18:41:22         PAGE  6
 
 
 SYMBOL TABLE
@@ -330,7 +326,7 @@ _PWRTE_OFF                        00003FFF
 _PWRTE_ON                         00003FF7
 _RC_OSC_CLKOUT                    00003FFF
 _RC_OSC_NOCLKOUT                  00003FFE
-MPASM 5.86  /HOME/RICHO/DOCUMENTS/PIC_ASSEMB   9-19-2023  18:31:52         PAGE  7
+MPASM 5.86  /HOME/RICHO/DOCUMENTS/PIC_ASSEMB   9-19-2023  18:41:22         PAGE  7
 
 
 SYMBOL TABLE
