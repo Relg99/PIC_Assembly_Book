@@ -50,7 +50,23 @@
 
 main:
 
+	MOVF	PORTA,W
+	ANDLW	b'00000111'
+	CALL	TruthTable
+	MOVWF	PORTB
 	GOTO	main
+
+TruthTable:
+
+	ADDWF	PCL,F
+	RETLW	b'000000'		; The instruction RETLW
+	RETLW	b'000001'		; returns a literal after a call.
+	RETLW	b'000010'
+	RETLW	b'000100'
+	RETLW	b'001000'
+	RETLW	b'010000'
+	RETLW	b'100000'
+	RETLW	b'111111'
 
 	END
 
